@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app: {{ .Release.Name }}
+spec:
+  strategy:
+    type: {{ .Values.app.strategyType }}
+  replicas: {{ .Values.app.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  template:
+    metadata:
+      name: {{ .Release.Name }}
+      labels:
+        app: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: {{ .Release.Name }}
+          image: {{ .Values.app.image }}
+          imagePullPolicy: {{ .Values.app.imagePullPolicy }}
+          env:
+            - name: ADDR
+              value: ":8080"
+            - name: FRONTEND_ORIGIN
+              value: {{ .Values.app.frontendUrl }}
+            - name: SECRET
+              value: {{ .Values.app.secret }}
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          resources:
+            {{ if or (.Values.app.resources.limits.cpu) (.Values.app.resources.limits.memory) }}
+            limits:
+              {{ if .Values.app.resources.limits.cpu }}
+              cpu: {{ .Values.app.resources.limits.cpu }}
+              {{ end }}
+              {{ if .Values.app.resources.limits.memory }}
+              memory: {{ .Values.app.resources.limits.memory }}
+              {{ end }}
+            {{ end }}
+            requests:
+              cpu: {{ .Values.app.resources.requests.cpu }}
+              memory: {{ .Values.app.resources.requests.memory }}
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            failureThreshold: {{ .Values.app.startupProbe.failureThreshold }}
+            periodSeconds: {{ .Values.app.startupProbe.periodSeconds }}
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: {{ .Values.app.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.app.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.app.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.app.readinessProbe.failureThreshold }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: {{ .Values.app.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.app.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.app.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.app.livenessProbe.failureThreshold }}
+      restartPolicy: Always

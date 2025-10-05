@@ -1,0 +1,22 @@
+name: matrix-clicker
+
+services:
+  server:
+    build:
+      context: ./server
+    image: harbor.sch.bme.hu/org-kir-dev/matrix-clicker-server:latest
+    container_name: matrix-clicker-server
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  client:
+    build:
+      context: ./client
+    image: harbor.sch.bme.hu/org-kir-dev/matrix-clicker-client:latest
+    container_name: matrix-clicker-client
+    ports:
+      - "3000:3000"
+    depends_on:
+      - server
+    restart: unless-stopped

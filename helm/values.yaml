@@ -1,0 +1,74 @@
+frontend:
+  enabled: true
+  image: harbor.sch.bme.hu/org-kir-dev/matrix-clicker-client
+  host: arnyjatek.kir-dev.hu
+  replicas: 1
+  strategyType: RollingUpdate
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "512Mi"
+    limits:
+      cpu:
+      memory:
+  ingress:
+    enabled: true
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt
+      kubernetes.io/tls-acme: 'true'
+      nginx.ingress.kubernetes.io/proxy-body-size: 20m
+      nginx.org/websocket-services: "matrix-clicker"
+  service:
+    type: ClusterIP
+  imagePullPolicy: Always
+  startupProbe:
+    failureThreshold: 60
+    periodSeconds: 5
+  readinessProbe:
+    initialDelaySeconds: 0
+    periodSeconds: 5
+    timeoutSeconds: 5
+    failureThreshold: 10
+  livenessProbe:
+    initialDelaySeconds: 0
+    periodSeconds: 5
+    timeoutSeconds: 5
+    failureThreshold: 5
+
+app:
+  image: harbor.sch.bme.hu/org-kir-dev/matrix-clicker-server
+  host: api.arnyjatek.kir-dev.hu
+  replicas: 1
+  strategyType: RollingUpdate
+  frontendUrl: https://arnyjatek.kir-dev.hu
+  secret: eztugysetudod123
+  imagePullPolicy: Always
+  ingress:
+    enabled: true
+    blockActuatorEndpoints: true
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt
+      kubernetes.io/tls-acme: 'true'
+      nginx.ingress.kubernetes.io/proxy-body-size: 20m
+  service:
+    type: ClusterIP
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "512Mi"
+    limits:
+      cpu: 4
+      memory: 1.5G
+  startupProbe:
+    failureThreshold: 60
+    periodSeconds: 5
+  readinessProbe:
+    initialDelaySeconds: 0
+    periodSeconds: 5
+    timeoutSeconds: 5
+    failureThreshold: 10
+  livenessProbe:
+    initialDelaySeconds: 0
+    periodSeconds: 5
+    timeoutSeconds: 5
+    failureThreshold: 5
