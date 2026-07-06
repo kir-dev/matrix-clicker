@@ -15,7 +15,13 @@ type GameDto struct {
 }
 
 type GameClientMessage struct {
-	Cps uint64 `json:"cps"`
+	Type string `json:"type"`
+	Cps  uint64 `json:"cps,omitempty"`
+}
+
+type ServerSyncMessage struct {
+	Type       string    `json:"type"`
+	ServerTime time.Time `json:"serverTime"`
 }
 
 type GameManagementDto struct {

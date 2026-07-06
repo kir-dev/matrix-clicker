@@ -12,6 +12,7 @@ import {
   useState,
 } from "react"
 import type { GameData, GamePhase } from "../common/game_data.ts"
+import { ClockSync } from "../common/clock_sync.ts"
 
 export type GameContextData = {
   isWebsocketSupported: boolean
@@ -19,6 +20,7 @@ export type GameContextData = {
   isLoading: boolean
   click: () => void
   data?: GameData
+  serverTimeOffset: number
 }
 
 const GameContext = createContext<GameContextData>({
@@ -26,6 +28,7 @@ const GameContext = createContext<GameContextData>({
   isSocketOpen: false,
   isLoading: true,
   click: () => {},
+  serverTimeOffset: 0,
 })
 
 const getPlayerId = () => {
@@ -56,19 +59,33 @@ function useWebsocket(
   setIsLoading: Dispatch<SetStateAction<boolean>>,
   setData: Dispatch<SetStateAction<GameData | undefined>>,
   setIsWebsocketSupported: Dispatch<SetStateAction<boolean>>,
+  clockSync: RefObject<ClockSync | null>,
+  setServerTimeOffset: Dispatch<SetStateAction<number>>,
 ) {
   useEffect(() => {
     let conn: WebSocket
+    let syncInterval: ReturnType<typeof setInterval> | undefined
+
+    const doSync = () => {
+      if (!conn || conn.readyState !== WebSocket.OPEN) return
+      clockSync.current?.requestSync(conn).then((offset) => {
+        setServerTimeOffset(offset)
+      })
+    }
+
     const connect = () => {
       conn = new WebSocket(getSocketEndpoint(isPlaying))
       console.log("connecting")
       socket.current = conn
       conn.onopen = () => {
         setIsSocketOpen(true)
+        doSync()
+        syncInterval = setInterval(doSync, 30000)
       }
       conn.onclose = () => {
         setIsSocketOpen(false)
         setIsLoading(false)
+        if (syncInterval !== undefined) clearInterval(syncInterval)
         setTimeout(() => connect(), 500)
       }
       conn.onerror = (e) => {
@@ -77,7 +94,10 @@ function useWebsocket(
       }
       conn.onmessage = (e: MessageEvent) => {
         setIsLoading(false)
-        const data = JSON.parse(e.data) as GameData
+        const raw = JSON.parse(e.data)
+        if (clockSync.current?.handleMessage(raw, Date.now())) return
+
+        const data = raw as GameData
         let winningTeam = 0
         data.teamScore.forEach((score, i) => {
           if (data.teamScore[winningTeam].score < score.score) {
@@ -85,7 +105,7 @@ function useWebsocket(
           }
         })
 
-        setData({ ...JSON.parse(e.data), winningTeam })
+        setData({ ...raw, winningTeam })
       }
     }
 
@@ -94,7 +114,10 @@ function useWebsocket(
     } else {
       setIsWebsocketSupported(false)
     }
-    return () => conn?.close()
+    return () => {
+      if (syncInterval !== undefined) clearInterval(syncInterval)
+      conn?.close()
+    }
   }, [])
 }
 
@@ -157,19 +180,26 @@ export const GameContextProvider = ({
   const [isLoading, setIsLoading] = useState(true)
   const [isSocketOpen, setIsSocketOpen] = useState(false)
   const [data, setData] = useState<GameData>()
+  const [serverTimeOffset, setServerTimeOffset] = useState(0)
 
   const clickedByPlayer = useRef(0)
   const socket = useRef<WebSocket>(null)
+  const clockSync = useRef<ClockSync | null>(null)
+  if (clockSync.current === null) clockSync.current = new ClockSync()
 
-  useWebsocket(socket, isPlaying, setIsSocketOpen, setIsLoading, setData, setIsWebsocketSupported)
+  useWebsocket(
+    socket, isPlaying,
+    setIsSocketOpen, setIsLoading, setData, setIsWebsocketSupported,
+    clockSync, setServerTimeOffset,
+  )
   useBatchedUpdate(isPlaying, data, socket, clickedByPlayer)
 
   const stage = data?.phase
   const click = useBatchedClickCallback(stage, isPlaying, clickedByPlayer, setData, socket)
 
   const context = useMemo(
-    () => ({ isWebsocketSupported, isSocketOpen, isLoading, click, data }),
-    [isWebsocketSupported, isSocketOpen, isLoading, click, data],
+    () => ({ isWebsocketSupported, isSocketOpen, isLoading, click, data, serverTimeOffset }),
+    [isWebsocketSupported, isSocketOpen, isLoading, click, data, serverTimeOffset],
   )
   return <GameContext.Provider value={context}>{children}</GameContext.Provider>
 }

@@ -23,6 +23,7 @@ export class Scene {
   displayedScores = baseScore
   phase: GamePhase = "WaitingForPlayers"
   winningTeam = 0
+  offset = 0
 
   lastFrameTime = 0
 
@@ -35,6 +36,7 @@ export class Scene {
   }
 
   updateData(data: GameContextData) {
+    this.offset = data.serverTimeOffset
     const gameData = data.data
     if (!gameData) return
     if (gameData.phase != "Playing" && gameData.phase != "Finished") {
@@ -53,7 +55,8 @@ export class Scene {
 
   draw(context: GraphicsContext, animationTime: DOMHighResTimeStamp) {
     const gl = context.gl
-    const gameTime = new Date().getTime() - this.startTime
+    const now = Date.now() - this.offset
+    const gameTime = now - this.startTime
     gl.clearColor(0, 0, 0, 1)
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 

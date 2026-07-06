@@ -5,7 +5,7 @@ import { PlayerView } from "./PlayerView.tsx"
 import kirDevLogo from "../assets/kirdev.svg"
 
 export const PlayerViewWithLoading = () => {
-  const { isWebsocketSupported, isLoading, isSocketOpen, data, click } = useGameContext()
+  const { isWebsocketSupported, isLoading, isSocketOpen, data, click, serverTimeOffset } = useGameContext()
   if (!isWebsocketSupported) {
     return (
       <h1 className="p-8 text-2xl font-bold text-center">
@@ -34,5 +34,5 @@ export const PlayerViewWithLoading = () => {
     )
   }
 
-  return <PlayerView data={data} onClick={click} />
+  return <PlayerView data={data} onClick={click} serverTimeOffset={serverTimeOffset} />
 }

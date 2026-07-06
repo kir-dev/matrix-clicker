@@ -5,7 +5,7 @@ import { Button } from "../common/Button.tsx"
 import { useEffect, useState } from "react"
 import { cn } from "../common/cn.ts"
 
-export const PlayerView = ({ data, onClick }: { data: GameData; onClick: () => void }) => {
+export const PlayerView = ({ data, onClick, serverTimeOffset = 0 }: { data: GameData; onClick: () => void; serverTimeOffset?: number }) => {
   const phase = data.phase
   const playerTeam = data.player.team
   const playerStyle = TeamStyles[playerTeam]
@@ -19,7 +19,7 @@ export const PlayerView = ({ data, onClick }: { data: GameData; onClick: () => v
   }
 
   return (
-    <GamePlaying data={data} onClick={onClick} playerStyle={playerStyle} playerTeam={playerTeam} />
+    <GamePlaying data={data} onClick={onClick} playerStyle={playerStyle} playerTeam={playerTeam} serverTimeOffset={serverTimeOffset} />
   )
 }
 
@@ -71,8 +71,8 @@ const GameWaitingForPlayers = ({ playerStyle }: { playerStyle: TeamStyle }) => {
   )
 }
 
-const calcTimeLeft = (to: string, ceil: boolean) => {
-  const timeLeft = Math.max(0, new Date(to).getTime() - new Date().getTime()) / 1000
+const calcTimeLeft = (to: string, ceil: boolean, offset: number) => {
+  const timeLeft = Math.max(0, new Date(to).getTime() - (Date.now() - offset)) / 1000
   if (ceil) {
     return Math.ceil(timeLeft)
   }
@@ -140,21 +140,23 @@ const GamePlaying = ({
   playerStyle,
   playerTeam,
   onClick,
+  serverTimeOffset,
 }: {
   data: GameData
   playerTeam: number
   playerStyle: TeamStyle
   onClick: () => void
+  serverTimeOffset: number
 }) => {
   const endTime = data.endTime
-  const [secondsLeft, setSecondsLeft] = useState(calcTimeLeft(endTime, false))
+  const [secondsLeft, setSecondsLeft] = useState(calcTimeLeft(endTime, false, serverTimeOffset))
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setSecondsLeft(calcTimeLeft(endTime, false))
+      setSecondsLeft(calcTimeLeft(endTime, false, serverTimeOffset))
     }, 250)
     return () => clearInterval(interval)
-  }, [endTime])
+  }, [endTime, serverTimeOffset])
 
   return (
     <div

@@ -6,7 +6,6 @@ I'm sorry, I optimized for delivery speed, not readability. This project was ver
 
 ## Important todos for next year
 
-- Implement clock synchronization, like [Cristian's algorithm](https://en.wikipedia.org/wiki/Cristian%27s_algorithm).
 - Review the colors used. [reference](https://www.youtube.com/live/feULovk98Yo?si=koM9D1hKouaIOrIm&t=5032)
 
 ## Needed software

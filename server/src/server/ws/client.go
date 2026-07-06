@@ -16,24 +16,27 @@ const (
 )
 
 type client struct {
-	hub    *Hub
-	conn   *websocket.Conn
-	send   chan GameDto
-	player game.Player
+	hub      *Hub
+	conn     *websocket.Conn
+	send     chan GameDto
+	syncSend chan ServerSyncMessage
+	player   game.Player
 }
 
 func newClient(conn *websocket.Conn, hub *Hub, playerId string) *client {
 	return &client{
-		hub:    hub,
-		conn:   conn,
-		send:   make(chan GameDto, 256),
-		player: game.NewPlayer(playerId),
+		hub:      hub,
+		conn:     conn,
+		send:     make(chan GameDto, 256),
+		syncSend: make(chan ServerSyncMessage, 1),
+		player:   game.NewPlayer(playerId),
 	}
 }
 
 func (c *client) readPump() {
 	defer func() {
 		c.hub.unregister <- c
+		close(c.syncSend)
 		_ = c.conn.Close()
 	}()
 	c.conn.SetReadLimit(maxMessageSize)
@@ -47,7 +50,14 @@ func (c *client) readPump() {
 			break
 		}
 
-		c.hub.game.RegisterScore(message.Cps, c.player)
+		if message.Type == "sync" {
+			c.syncSend <- ServerSyncMessage{
+				Type:       "sync",
+				ServerTime: time.Now(),
+			}
+		} else {
+			c.hub.game.RegisterScore(message.Cps, c.player)
+		}
 	}
 }
 
@@ -69,6 +79,16 @@ func (c *client) writePump() {
 			err := c.conn.WriteJSON(message)
 			if err != nil {
 				log.Printf("failed to send json message: %v", err)
+			}
+		case syncMsg, ok := <-c.syncSend:
+			if !ok {
+				return
+			}
+			_ = c.conn.SetWriteDeadline(time.Now().Add(writeWait))
+			err := c.conn.WriteJSON(syncMsg)
+			if err != nil {
+				log.Printf("failed to send sync message: %v", err)
+				return
 			}
 		case <-ticker.C:
 			_ = c.conn.SetWriteDeadline(time.Now().Add(writeWait))
