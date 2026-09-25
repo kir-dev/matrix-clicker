@@ -8,7 +8,7 @@ metadata:
 spec:
   strategy:
     type: {{ .Values.frontend.strategyType }}
-  replicas: 1
+  replicas: {{ .Values.frontend.replicas }}
   selector:
     matchLabels:
       app: {{ .Release.Name }}-frontend
