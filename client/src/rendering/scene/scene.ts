@@ -7,6 +7,7 @@ import type { GamePhase } from "../../common/game_data.ts"
 import { lerp } from "../util.ts"
 import { GameBackground } from "./game_background.ts"
 import { ProgressBars } from "./progress_bars.ts"
+import { DisplayColors } from "../colors.ts"
 
 const baseScore = [0, 0, 0, 0]
 
@@ -59,7 +60,7 @@ export class Scene {
     const gl = context.gl
     const serverNow = this.serverTime + performance.now() - this.serverTimeReceivedAt
     const gameTime = serverNow - this.startTime
-    gl.clearColor(0, 0, 0, 1)
+    gl.clearColor(...DisplayColors.background.gl)
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
     this.drawGame(animationTime, gameTime)

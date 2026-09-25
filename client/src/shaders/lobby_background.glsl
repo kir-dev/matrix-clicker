@@ -26,6 +26,8 @@ out vec4 O;
 uniform float time;
 uniform vec4 color;
 uniform float opacity;
+uniform float colorIntensity;
+uniform vec3 colorCeiling;
 
 void main() {
     vec2 uv = pos * 6.0 + time * 0.125;
@@ -55,5 +57,5 @@ void main() {
 
     v = m2 - m;
 
-    O = vec4(min(color.rgb / v * 1.5, vec3(1.0)) * smoothstep(0.0, 1.0, opacity), 1.0);
+    O = vec4(min(color.rgb / v * colorIntensity, colorCeiling) * smoothstep(0.0, 1.0, opacity), 1.0);
 }

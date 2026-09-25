@@ -3,6 +3,7 @@ import { ViewportHeight, ViewportWidth } from "../rendering//constants.ts"
 import { useRenderer } from "./useRenderer.ts"
 import type { RenderCallback } from "../rendering/renderer.ts"
 import type { GraphicsContext } from "../rendering/graphics_context.ts"
+import { DisplayColors } from "../rendering/colors.ts"
 import maskImage from "../assets/mask.png"
 
 type PixelProps = {
@@ -82,7 +83,7 @@ const Window = ({ pixels, x, y, spacing }: PixelProps) => (
 )
 
 function getColorFromPixelsAt(pixels: Uint8Array, x: number, y: number) {
-  if (!pixels.length) return "#000"
+  if (!pixels.length) return DisplayColors.background.css
   const row = (ViewportHeight - y - 1) * ViewportWidth // WebGL textures are upside down
   const index = row + x
   return (

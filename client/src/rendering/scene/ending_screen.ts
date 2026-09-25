@@ -1,6 +1,7 @@
 import { mat4, vec3 } from "gl-matrix"
 import type { GraphicsContext } from "../graphics_context.ts"
 import { TeamStyles } from "../../common/common.ts"
+import { DisplayColors } from "../colors.ts"
 
 export class EndingScreen {
   context: GraphicsContext
@@ -19,6 +20,10 @@ export class EndingScreen {
     mat4.scale(transform, transform, vec3.fromValues(2.8, 2.8, 1))
     gl.uniformMatrix4fv(gl.getUniformLocation(shader, "transform"), false, transform)
     gl.uniform1f(gl.getUniformLocation(shader, "opacity"), opacity)
+    gl.uniform1f(
+      gl.getUniformLocation(shader, "gradientMix"),
+      DisplayColors.shader.endingScreenGradientMix,
+    )
     gl.uniform4f(gl.getUniformLocation(shader, "color"), ...TeamStyles[winningTeam].glColor)
 
     this.context.quad.draw()

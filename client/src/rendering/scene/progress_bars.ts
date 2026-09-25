@@ -2,6 +2,7 @@ import type { GraphicsContext } from "../graphics_context.ts"
 import { mat4, vec3 } from "gl-matrix"
 import { SolidColor } from "../color.ts"
 import { TeamStyles } from "../../common/common.ts"
+import { DisplayColors } from "../colors.ts"
 
 export type ProgressBarRenderProps = {
   animationTime: number
@@ -38,6 +39,10 @@ export class ProgressBars {
       mat4.scale(transform, transform, vec3.fromValues(0.2, 2, 1))
       gl.uniformMatrix4fv(gl.getUniformLocation(shader, "transform"), false, transform)
       gl.uniform1f(gl.getUniformLocation(shader, "time"), animationTime / 1000)
+      gl.uniform1f(
+        gl.getUniformLocation(shader, "noiseMix"),
+        DisplayColors.shader.progressBarNoiseMix,
+      )
       const teamColor = new SolidColor(TeamStyles[i].glColor).color
       gl.uniform4f(gl.getUniformLocation(shader, "color"), ...teamColor)
       this.context.quad.draw()

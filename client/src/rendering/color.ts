@@ -1,24 +1,7 @@
 import { lerp } from "./util.ts"
+import type { GlColor } from "./colors.ts"
 
-export type GlColor = [number, number, number, number]
-
-export const AnimationColors: GlColor[] = [
-  [0.025, 0.05, 0.1, 1],
-  [0.025, 0.05, 0.1, 1],
-  [0.025, 0.05, 0.1, 1],
-  [0.06, 0.035, 0.0125, 1],
-  [0.06, 0.035, 0.0125, 1],
-  [0.06, 0.035, 0.0125, 1],
-  [0.035, 0.06, 0.0125, 1],
-  [0.035, 0.06, 0.0125, 1],
-  [0.035, 0.06, 0.0125, 1],
-  [0.06, 0.06, 0.0125, 1],
-  [0.06, 0.06, 0.0125, 1],
-  [0.06, 0.06, 0.0125, 1],
-  [0.045, 0.0225, 0.045, 1],
-  [0.045, 0.0225, 0.045, 1],
-  [0.045, 0.0225, 0.045, 1],
-] as const
+export type { GlColor } from "./colors.ts"
 
 export class SolidColor {
   color: GlColor

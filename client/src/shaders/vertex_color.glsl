@@ -18,8 +18,9 @@ out vec4 outColor;
 in vec2 pos;
 uniform vec4 color;
 uniform float opacity;
+uniform float gradientMix;
 
 void main() {
-    vec3 col = mix(color.rgb, pos.xyy, 0.35);
+    vec3 col = mix(color.rgb, pos.xyy, gradientMix);
     outColor = vec4(col, smoothstep(0.0, 1.0, opacity));
 }

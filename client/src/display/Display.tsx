@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef } from "react"
 import { useRenderer } from "./useRenderer.ts"
 import { ViewportHeight, ViewportWidth } from "../rendering/constants.ts"
+import { DisplayColors } from "../rendering/colors.ts"
 
 export const Display = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -15,7 +16,7 @@ export const Display = () => {
 
   // 'imageRendering: "pixelated"' - make rendering pixel perfect, disable all smoothing and antialiasing
   return (
-    <div style={{ width: "100%", height: "100vh", background: "black" }}>
+    <div style={{ width: "100%", height: "100vh", background: DisplayColors.background.css }}>
       <canvas style={{ imageRendering: "pixelated" }} ref={canvasRef}></canvas>
     </div>
   )

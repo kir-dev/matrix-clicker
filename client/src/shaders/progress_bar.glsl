@@ -19,6 +19,7 @@ in vec2 pos;
 uniform vec4 color;
 uniform float barProgress;
 uniform float time;
+uniform float noiseMix;
 
 out vec4 outColor;
 
@@ -49,7 +50,7 @@ void main() {
     if (distanceFromBarTop < 0.0 && barProgress < 0.4) discard;
     else if (distanceFromBarTop < 0.0 && !(distanceFromBarTop > -0.08 && noise > 0.5)) discard;
 
-    vec4 noisyColor = color * 0.8 + noise * 0.2 * color;
+    vec4 noisyColor = color * (1.0 - noiseMix) + noise * noiseMix * color;
 
     outColor = vec4(noisyColor.rgb, color.a);
 }
