@@ -58,24 +58,31 @@ function useWebsocket(
   setIsWebsocketSupported: Dispatch<SetStateAction<boolean>>,
 ) {
   useEffect(() => {
-    let conn: WebSocket
+    let conn: WebSocket | undefined
+    let reconnectTimeout: number | undefined
+    let disposed = false
     const connect = () => {
+      if (disposed) return
       conn = new WebSocket(getSocketEndpoint(isPlaying))
       console.log("connecting")
       socket.current = conn
       conn.onopen = () => {
+        if (disposed) return
         setIsSocketOpen(true)
       }
       conn.onclose = () => {
+        if (disposed) return
         setIsSocketOpen(false)
         setIsLoading(false)
-        setTimeout(() => connect(), 500)
+        reconnectTimeout = window.setTimeout(connect, 500)
       }
       conn.onerror = (e) => {
+        if (disposed) return
         console.error(e)
         conn?.close()
       }
       conn.onmessage = (e: MessageEvent) => {
+        if (disposed) return
         setIsLoading(false)
         const data = JSON.parse(e.data) as GameData
         let winningTeam = 0
@@ -94,7 +101,11 @@ function useWebsocket(
     } else {
       setIsWebsocketSupported(false)
     }
-    return () => conn?.close()
+    return () => {
+      disposed = true
+      if (reconnectTimeout !== undefined) window.clearTimeout(reconnectTimeout)
+      conn?.close()
+    }
   }, [])
 }
 
