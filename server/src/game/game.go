@@ -146,7 +146,9 @@ func (g *game) GetTeamScores() []TeamScore {
 	g.stateMutex.Lock()
 	defer g.stateMutex.Unlock()
 
-	return g.teamScores
+	scores := make([]TeamScore, len(g.teamScores))
+	copy(scores, g.teamScores)
+	return scores
 }
 
 func (g *game) StartTime() time.Time {
