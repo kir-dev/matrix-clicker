@@ -16,7 +16,7 @@ services:
     image: harbor.sch.bme.hu/org-kir-dev/matrix-clicker-client:latest
     container_name: matrix-clicker-client
     ports:
-      - "3000:3000"
+      - "3000:80"
     depends_on:
       - server
     restart: unless-stopped
