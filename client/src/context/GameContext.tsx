@@ -60,6 +60,7 @@ function useWebsocket(
   useEffect(() => {
     let conn: WebSocket | undefined
     let reconnectTimeout: number | undefined
+    let reconnectAttempts = 0
     let disposed = false
     const connect = () => {
       if (disposed) return
@@ -68,13 +69,16 @@ function useWebsocket(
       socket.current = conn
       conn.onopen = () => {
         if (disposed) return
+        reconnectAttempts = 0
         setIsSocketOpen(true)
       }
       conn.onclose = () => {
         if (disposed) return
         setIsSocketOpen(false)
         setIsLoading(false)
-        reconnectTimeout = window.setTimeout(connect, 500)
+        const maxDelay = Math.min(500 * 2 ** reconnectAttempts, 2000)
+        reconnectAttempts = Math.min(reconnectAttempts + 1, 2)
+        reconnectTimeout = window.setTimeout(connect, Math.random() * maxDelay)
       }
       conn.onerror = (e) => {
         if (disposed) return
