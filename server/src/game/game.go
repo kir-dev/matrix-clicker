@@ -133,8 +133,8 @@ func (g *game) PhaseTransitionChannel() <-chan Phase {
 }
 
 func (g *game) GetTeamSizes() []uint32 {
-	g.stateMutex.Lock()
-	defer g.stateMutex.Unlock()
+	g.playerAssignMutex.Lock()
+	defer g.playerAssignMutex.Unlock()
 
 	sizes := make([]uint32, NumberOfTeams)
 	for _, team := range g.playersAssignedToTeams {
