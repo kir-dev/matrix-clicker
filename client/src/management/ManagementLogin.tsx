@@ -20,6 +20,8 @@ export function ManagementLogin({ setSecret }: { setSecret: (secret: string) => 
           .then((res) => {
             if (res.ok) {
               setSecret(newSecret)
+            } else {
+              setHasError(true)
             }
           })
           .catch((err) => {
