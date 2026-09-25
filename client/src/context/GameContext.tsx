@@ -88,15 +88,15 @@ function useWebsocket(
       conn.onmessage = (e: MessageEvent) => {
         if (disposed) return
         setIsLoading(false)
-        const data = JSON.parse(e.data) as GameData
+        const snapshot = JSON.parse(e.data) as Omit<GameData, "winningTeam" | "receivedAt">
         let winningTeam = 0
-        data.teamScore.forEach((score, i) => {
-          if (data.teamScore[winningTeam].score < score.score) {
+        snapshot.teamScore.forEach((score, i) => {
+          if (snapshot.teamScore[winningTeam].score < score.score) {
             winningTeam = i
           }
         })
 
-        setData({ ...JSON.parse(e.data), winningTeam })
+        setData({ ...snapshot, winningTeam, receivedAt: performance.now() })
       }
     }
 

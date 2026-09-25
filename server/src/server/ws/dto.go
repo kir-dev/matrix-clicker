@@ -7,11 +7,12 @@ import (
 )
 
 type GameDto struct {
-	Phase     string           `json:"phase"`
-	Player    game.Player      `json:"player"`
-	Teams     []game.TeamScore `json:"teamScore"`
-	StartTime time.Time        `json:"startTime"`
-	EndTime   time.Time        `json:"endTime"`
+	ServerTime time.Time        `json:"serverTime"`
+	Phase      string           `json:"phase"`
+	Player     game.Player      `json:"player"`
+	Teams      []game.TeamScore `json:"teamScore"`
+	StartTime  time.Time        `json:"startTime"`
+	EndTime    time.Time        `json:"endTime"`
 }
 
 type GameClientMessage struct {

@@ -1,6 +1,10 @@
 package ws
 
-import "kir-dev.hu/matrix-clicker/src/game"
+import (
+	"time"
+
+	"kir-dev.hu/matrix-clicker/src/game"
+)
 
 type Hub struct {
 	game       game.Game
@@ -52,10 +56,11 @@ func sendGameStateToClients(h *Hub) {
 
 func getGameStateDtoForClient(client *client, game game.Game) GameDto {
 	return GameDto{
-		Phase:     game.GetPhase().String(),
-		Player:    client.player,
-		Teams:     game.GetTeamScores(),
-		StartTime: game.StartTime(),
-		EndTime:   game.EndTime(),
+		ServerTime: time.Now(),
+		Phase:      game.GetPhase().String(),
+		Player:     client.player,
+		Teams:      game.GetTeamScores(),
+		StartTime:  game.StartTime(),
+		EndTime:    game.EndTime(),
 	}
 }

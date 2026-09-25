@@ -1,8 +1,8 @@
 import { CountingNumber } from "../common/CountingNumber.tsx"
 import { type TeamStyle, TeamStyles } from "../common/common.ts"
-import type { GameData } from "../common/game_data.ts"
+import { getServerTime, type GameData } from "../common/game_data.ts"
 import { Button } from "../common/Button.tsx"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { cn } from "../common/cn.ts"
 
 export const PlayerView = ({ data, onClick }: { data: GameData; onClick: () => void }) => {
@@ -71,8 +71,8 @@ const GameWaitingForPlayers = ({ playerStyle }: { playerStyle: TeamStyle }) => {
   )
 }
 
-const calcTimeLeft = (to: string, ceil: boolean) => {
-  const timeLeft = Math.max(0, new Date(to).getTime() - new Date().getTime()) / 1000
+const calcTimeLeft = (to: string, data: GameData, ceil: boolean) => {
+  const timeLeft = Math.max(0, new Date(to).getTime() - getServerTime(data)) / 1000
   if (ceil) {
     return Math.ceil(timeLeft)
   }
@@ -147,11 +147,13 @@ const GamePlaying = ({
   onClick: () => void
 }) => {
   const endTime = data.endTime
-  const [secondsLeft, setSecondsLeft] = useState(calcTimeLeft(endTime, false))
+  const latestData = useRef(data)
+  latestData.current = data
+  const [secondsLeft, setSecondsLeft] = useState(calcTimeLeft(endTime, data, false))
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setSecondsLeft(calcTimeLeft(endTime, false))
+      setSecondsLeft(calcTimeLeft(endTime, latestData.current, false))
     }, 250)
     return () => clearInterval(interval)
   }, [endTime])
