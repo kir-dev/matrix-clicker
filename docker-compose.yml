@@ -17,6 +17,9 @@ services:
     container_name: matrix-clicker-client
     ports:
       - "3000:80"
+    environment:
+      VITE_API_BASE_URL: http://localhost:8080
+      VITE_WS_BASE_URL: ws://localhost:8080
     depends_on:
       - server
     restart: unless-stopped

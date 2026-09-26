@@ -2,6 +2,8 @@ frontend:
   enabled: true
   image: harbor.sch.bme.hu/org-kir-dev/matrix-clicker-client
   host: arnyjatek.kir-dev.hu
+  apiBaseUrl: https://api.arnyjatek.kir-dev.hu
+  wsBaseUrl: wss://api.arnyjatek.kir-dev.hu
   replicas: 1
   strategyType: RollingUpdate
   resources:

@@ -39,7 +39,7 @@ const getPlayerId = () => {
 }
 
 const getSocketEndpoint = (isPlaying: boolean): string => {
-  const wsUrl = import.meta.env.VITE_WS_BASE_URL + "/ws"
+  const wsUrl = window.config.WS_BASE_URL + "/ws"
   if (!isPlaying) {
     return wsUrl
   }

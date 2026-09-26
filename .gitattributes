@@ -1,0 +1,3 @@
+# The container entrypoint is executed via its shebang, so it must never be
+# checked out with CRLF line endings.
+*.sh text eol=lf
