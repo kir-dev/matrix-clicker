@@ -1,4 +1,3 @@
-import gameBackgroundSource from "../shaders/game_background.glsl?raw"
 import lobbyBackgroundSource from "../shaders/lobby_background.glsl?raw"
 import blitSource from "../shaders/blit.glsl?raw"
 import vertexColorSource from "../shaders/vertex_color.glsl?raw"
@@ -10,7 +9,6 @@ export class GraphicsContext {
   readonly gl: WebGL2RenderingContext
 
   readonly blitProgram: WebGLProgram
-  readonly gameBackgroundProgram: WebGLProgram
   readonly lobbyBackgroundProgram: WebGLProgram
   readonly progressBarProgram: WebGLProgram
   readonly vertexColorProgram: WebGLProgram
@@ -30,7 +28,6 @@ export class GraphicsContext {
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 
     this.blitProgram = createShader(gl, blitSource)
-    this.gameBackgroundProgram = createShader(gl, gameBackgroundSource)
     this.lobbyBackgroundProgram = createShader(gl, lobbyBackgroundSource)
     this.progressBarProgram = createShader(gl, progressBarSource)
     this.vertexColorProgram = createShader(gl, vertexColorSource)

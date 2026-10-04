@@ -5,7 +5,6 @@ import type { GraphicsContext } from "../graphics_context.ts"
 import type { GameContextData } from "../../context/GameContext.tsx"
 import type { GamePhase } from "../../common/game_data.ts"
 import { lerp } from "../util.ts"
-import { GameBackground } from "./game_background.ts"
 import { ProgressBars } from "./progress_bars.ts"
 import { DisplayColors } from "../colors.ts"
 
@@ -14,7 +13,6 @@ const baseScore = [0, 0, 0, 0]
 export class Scene {
   readonly countdown: Countdown
   readonly lobbyBackground: LobbyBackground
-  readonly gameBackground: GameBackground
   readonly progressBars: ProgressBars
   readonly endingScreen: EndingScreen
 
@@ -26,13 +24,13 @@ export class Scene {
   winningTeam = 0
   serverTime = Date.now()
   serverTimeReceivedAt = performance.now()
+  lastVisibleOpacityForLobby = 0.65
 
   lastFrameTime = 0
 
   constructor(context: GraphicsContext) {
     this.countdown = new Countdown(context)
     this.lobbyBackground = new LobbyBackground(context)
-    this.gameBackground = new GameBackground(context)
     this.progressBars = new ProgressBars(context)
     this.endingScreen = new EndingScreen(context)
   }
@@ -99,14 +97,15 @@ export class Scene {
 
     const shouldDimBackground = this.phase == "Starting" && timeUntilStart < 10
     const dimProgress = 1 - Math.max(0, Math.min(1, (timeUntilStart - 5) / 2))
-    const backgroundOpacity = shouldDimBackground ? lerp(1, 0.3, dimProgress) : 1
-
+    const backgroundOpacity = shouldDimBackground
+      ? lerp(1, this.lastVisibleOpacityForLobby, dimProgress)
+      : 1
     this.lobbyBackground.draw(animationTime, backgroundOpacity)
     this.countdown.draw(secondsUntilStart, transitionAnimationProgress)
   }
 
   private drawGame(animationTime: number, gameTime: number) {
-    this.gameBackground.draw(animationTime)
+    this.lobbyBackground.draw(animationTime, this.lastVisibleOpacityForLobby)
     this.progressBars.draw({
       animationTime,
       gameTime,

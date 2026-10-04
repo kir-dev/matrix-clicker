@@ -63,7 +63,6 @@ helm upgrade -n <namespace> matrix-clicker ./helm \
 
 `docker-compose.yml` sets the same two variables for local runs.
 
-## The shaders for the lobby and gameplay animation were based on these. Thank you!
+## The shaders for the lobby and gameplay animation were based on this. Thank you!
 
 - https://www.shadertoy.com/view/MtlyR8
-- https://www.shadertoy.com/view/lsyfWD

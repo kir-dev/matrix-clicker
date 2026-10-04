@@ -14,15 +14,15 @@ export const DisplayColors = {
     },
     red: {
       color: "#cb3b28",
-      glColor: [0.796, 0.231, 0.157, 1.0] as GlColor,
+      glColor: [1, 0, 0, 1.0] as GlColor, // differs from the hex code, so it's visible on the display
     },
     green: {
       color: "#7acb28ff",
-      glColor: [0.48, 0.7992, 0.1596, 1] as GlColor,
+      glColor: [0.192, 1, 0.18, 1] as GlColor, // differs from the hex code, so it's visible on the display
     },
     yellow: {
       color: "#cbcb28ff",
-      glColor: [0.7992, 0.7992, 0.1596, 1] as GlColor,
+      glColor: [1, 0.918, 0, 1] as GlColor, // differs from the hex code, so it's visible on the display
     },
   },
   lobbyAnimation: [
@@ -52,7 +52,7 @@ export const DisplayColors = {
       intensity: 1.5,
       colorCeiling: [1, 1, 1] as GlRgb,
     },
-    progressBarNoiseMix: 0.2,
-    endingScreenGradientMix: 0.35,
+    progressBarNoiseMix: 0.4,
+    endingScreenGradientMix: 0.5,
   },
 }
