@@ -13,7 +13,7 @@ export const PlayerView = ({ data, onClick }: { data: GameData; onClick: () => v
   if (phase === "WaitingForPlayers") {
     return <GameWaitingForPlayers playerStyle={playerStyle} />
   } else if (phase === "Starting") {
-    return <GameStarting playerStyle={playerStyle} />
+    return <GameStarting data={data} playerStyle={playerStyle} />
   } else if (phase === "Finished") {
     return <GameFinished data={data} playerTeam={playerTeam} />
   }
@@ -79,7 +79,19 @@ const calcTimeLeft = (to: string, data: GameData, ceil: boolean) => {
   return Math.floor(timeLeft)
 }
 
-const GameStarting = ({ playerStyle }: { playerStyle: TeamStyle }) => {
+const GameStarting = ({ playerStyle, data }: { playerStyle: TeamStyle, data:GameData }) => {
+  const startTime = data.startTime
+  const latestData = useRef(data)
+  latestData.current = data
+  const [secondsLeft, setSecondsLeft] = useState(calcTimeLeft(startTime, data, false))
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSecondsLeft(calcTimeLeft(startTime, latestData.current, false))
+    }, 250)
+    return () => clearInterval(interval)
+  }, [startTime])
+
   return (
     <div className="select-none flex flex-col items-center gap-8">
       <h1
@@ -105,6 +117,14 @@ const GameStarting = ({ playerStyle }: { playerStyle: TeamStyle }) => {
           Teljes Képernyő
         </Button>
       )}
+      <div
+        className={cn(
+          "flex gap-2 justify-evenly text-2xl font-bold p-8 pb-16",
+          secondsLeft < 5 && "animate-pulse",
+        )}
+      >
+        {secondsLeft + 1}
+      </div>
     </div>
   )
 }

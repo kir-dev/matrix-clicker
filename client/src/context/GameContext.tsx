@@ -11,7 +11,19 @@ import {
   useRef,
   useState,
 } from "react"
-import type { GameData, GamePhase } from "../common/game_data.ts"
+import type {
+  ClientMessage,
+  GameData,
+  GamePhase,
+  GameSnapshotMessage,
+  PongMessage,
+  ServerMessage,
+} from "../common/game_data.ts"
+import { ClockSync } from "../common/clock_sync.ts"
+
+const PingBurstCount = 4
+const PingBurstIntervalMs = 250
+const PingIntervalMs = 5000
 
 export type GameContextData = {
   isWebsocketSupported: boolean
@@ -47,6 +59,8 @@ const getSocketEndpoint = (isPlaying: boolean): string => {
   return `${wsUrl}?playerId=${getPlayerId()}`
 }
 
+const send = (socket: WebSocket, message: ClientMessage) => socket.send(JSON.stringify(message))
+
 export const useGameContext = () => useContext(GameContext)
 
 function useWebsocket(
@@ -60,43 +74,81 @@ function useWebsocket(
   useEffect(() => {
     let conn: WebSocket | undefined
     let reconnectTimeout: number | undefined
+    let pingTimeout: number | undefined
     let reconnectAttempts = 0
     let disposed = false
+    const clockSync = new ClockSync()
+
+    const onSnapshot = (message: GameSnapshotMessage, receivedAt: number) => {
+      setIsLoading(false)
+      let winningTeam = 0
+      message.teamScore.forEach((score, i) => {
+        if (message.teamScore[winningTeam].score < score.score) {
+          winningTeam = i
+        }
+      })
+
+      // Until the first pong lands, fall back to the one-way estimate (assumes zero latency).
+      const clockOffset = clockSync.offset ?? new Date(message.serverTime).getTime() - receivedAt
+      setData({ ...message, winningTeam, clockOffset })
+    }
+
+    const onPong = (message: PongMessage, receivedAt: number) => {
+      const serverTime = new Date(message.serverTime).getTime()
+      const clockOffset = clockSync.addRoundTrip(message.clientTime, receivedAt, serverTime)
+      setData((d) => (d === undefined || d.clockOffset === clockOffset ? d : { ...d, clockOffset }))
+    }
+
     const connect = () => {
       if (disposed) return
-      conn = new WebSocket(getSocketEndpoint(isPlaying))
+      const ws = new WebSocket(getSocketEndpoint(isPlaying))
       console.log("connecting")
-      socket.current = conn
-      conn.onopen = () => {
+      conn = ws
+      socket.current = ws
+
+      let pingsSent = 0
+      const ping = () => {
+        if (disposed || ws.readyState !== WebSocket.OPEN) return
+        send(ws, { type: "ping", clientTime: performance.now() })
+        pingsSent++
+        const delay = pingsSent < PingBurstCount ? PingBurstIntervalMs : PingIntervalMs
+        pingTimeout = window.setTimeout(ping, delay)
+      }
+
+      ws.onopen = () => {
         if (disposed) return
         reconnectAttempts = 0
         setIsSocketOpen(true)
+        ping()
       }
-      conn.onclose = () => {
+      ws.onclose = () => {
         if (disposed) return
+        window.clearTimeout(pingTimeout)
         setIsSocketOpen(false)
         setIsLoading(false)
         const maxDelay = Math.min(500 * 2 ** reconnectAttempts, 2000)
         reconnectAttempts = Math.min(reconnectAttempts + 1, 2)
         reconnectTimeout = window.setTimeout(connect, Math.random() * maxDelay)
       }
-      conn.onerror = (e) => {
+      ws.onerror = (e) => {
         if (disposed) return
         console.error(e)
-        conn?.close()
+        ws.close()
       }
-      conn.onmessage = (e: MessageEvent) => {
+      ws.onmessage = (e: MessageEvent) => {
         if (disposed) return
-        setIsLoading(false)
-        const snapshot = JSON.parse(e.data) as Omit<GameData, "winningTeam" | "receivedAt">
-        let winningTeam = 0
-        snapshot.teamScore.forEach((score, i) => {
-          if (snapshot.teamScore[winningTeam].score < score.score) {
-            winningTeam = i
-          }
-        })
-
-        setData({ ...snapshot, winningTeam, receivedAt: performance.now() })
+        const receivedAt = performance.now()
+        const message = JSON.parse(e.data) as ServerMessage
+        switch (message.type) {
+          case "game":
+            onSnapshot(message, receivedAt)
+            break
+          case "pong":
+            onPong(message, receivedAt)
+            break
+          default:
+            console.warn("unknown server message", message)
+        }
       }
     }
 
@@ -108,6 +160,7 @@ function useWebsocket(
     return () => {
       disposed = true
       if (reconnectTimeout !== undefined) window.clearTimeout(reconnectTimeout)
+      if (pingTimeout !== undefined) window.clearTimeout(pingTimeout)
       conn?.close()
     }
   }, [])
@@ -131,8 +184,8 @@ function useBatchedUpdate(
     let timeout: number | undefined
     const interval = setInterval(() => {
       timeout = setTimeout(() => {
-        if (clickedByPlayer.current === 0) return
-        socket.current?.send(JSON.stringify({ cps: clickedByPlayer.current }))
+        if (clickedByPlayer.current === 0 || !socket.current) return
+        send(socket.current, { type: "cps", cps: clickedByPlayer.current })
         clickedByPlayer.current = 0
       }, Math.random() * 50)
     }, 100)

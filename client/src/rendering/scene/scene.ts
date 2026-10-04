@@ -16,14 +16,13 @@ export class Scene {
   readonly progressBars: ProgressBars
   readonly endingScreen: EndingScreen
 
-  startTime = new Date().getTime()
+  startTime = performance.now()
   endtime = this.startTime + 100000
   relativeTeamScores = baseScore
   displayedScores = baseScore
   phase: GamePhase = "WaitingForPlayers"
   winningTeam = 0
-  serverTime = Date.now()
-  serverTimeReceivedAt = performance.now()
+  clockOffset = Date.now() - performance.now()
   lastVisibleOpacityForLobby = 0.65
 
   lastFrameTime = 0
@@ -50,13 +49,12 @@ export class Scene {
     this.winningTeam = gameData.winningTeam
     this.startTime = new Date(gameData.startTime).getTime()
     this.endtime = new Date(gameData.endTime).getTime()
-    this.serverTime = new Date(gameData.serverTime).getTime()
-    this.serverTimeReceivedAt = gameData.receivedAt
+    this.clockOffset = gameData.clockOffset
   }
 
   draw(context: GraphicsContext, animationTime: DOMHighResTimeStamp) {
     const gl = context.gl
-    const serverNow = this.serverTime + performance.now() - this.serverTimeReceivedAt
+    const serverNow = performance.now() + this.clockOffset
     const gameTime = serverNow - this.startTime
     gl.clearColor(...DisplayColors.background.gl)
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)

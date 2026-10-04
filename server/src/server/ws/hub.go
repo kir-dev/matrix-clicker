@@ -56,6 +56,7 @@ func sendGameStateToClients(h *Hub) {
 
 func getGameStateDtoForClient(client *client, game game.Game) GameDto {
 	return GameDto{
+		Type:       GameStateMessageType,
 		ServerTime: time.Now(),
 		Phase:      game.GetPhase().String(),
 		Player:     client.player,

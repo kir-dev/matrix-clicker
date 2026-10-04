@@ -16,9 +16,14 @@ const (
 )
 
 type client struct {
-	hub    *Hub
-	conn   *websocket.Conn
-	send   chan GameDto
+	hub  *Hub
+	conn *websocket.Conn
+	// send carries game snapshots; it is owned (written and closed) by the hub goroutine.
+	send chan GameDto
+	// pong carries the client timestamps of pings awaiting an answer. readPump fills it, writePump
+	// drains it. It is separate from send so that readPump never writes to a channel the hub may
+	// close underneath it.
+	pong   chan float64
 	player game.Player
 }
 
@@ -27,6 +32,7 @@ func newClient(conn *websocket.Conn, hub *Hub, playerId string) *client {
 		hub:    hub,
 		conn:   conn,
 		send:   make(chan GameDto, 256),
+		pong:   make(chan float64, 8),
 		player: game.NewPlayer(playerId),
 	}
 }
@@ -47,7 +53,18 @@ func (c *client) readPump() {
 			break
 		}
 
-		c.hub.game.RegisterScore(message.Cps, c.player)
+		switch message.Type {
+		case CpsMessageType:
+			c.hub.game.RegisterScore(message.Cps, c.player)
+		case PingMessageType:
+			// Never block the read loop: a client that cannot drain its pongs simply gets fewer.
+			select {
+			case c.pong <- message.ClientTime:
+			default:
+			}
+		default:
+			log.Printf("unknown message type %q from player %q", message.Type, c.player.Id)
+		}
 	}
 }
 
@@ -69,6 +86,14 @@ func (c *client) writePump() {
 			err := c.conn.WriteJSON(message)
 			if err != nil {
 				log.Printf("failed to send json message: %v", err)
+			}
+		case clientTime := <-c.pong:
+			_ = c.conn.SetWriteDeadline(time.Now().Add(writeWait))
+			// Stamp as late as possible so time spent queued behind other writes is not reported
+			// to the client as server time.
+			pong := PongDto{Type: PongMessageType, ClientTime: clientTime, ServerTime: time.Now()}
+			if err := c.conn.WriteJSON(pong); err != nil {
+				log.Printf("failed to send pong: %v", err)
 			}
 		case <-ticker.C:
 			_ = c.conn.SetWriteDeadline(time.Now().Add(writeWait))

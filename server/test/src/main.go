@@ -38,18 +38,32 @@ func startWorker(ctx context.Context, increment int) {
 		}
 	}()
 
-	ticker := time.NewTicker(time.Millisecond * 30)
-	defer ticker.Stop()
+	cpsTicker := time.NewTicker(time.Millisecond * 30)
+	defer cpsTicker.Stop()
+	// Same cadence as the browser client's clock sync pings.
+	pingTicker := time.NewTicker(time.Second * 5)
+	defer pingTicker.Stop()
 
 	for {
 		select {
-		case <-ticker.C:
+		case <-cpsTicker.C:
 			message := ws.GameClientMessage{
-				Cps: uint64(increment),
+				Type: ws.CpsMessageType,
+				Cps:  uint64(increment),
 			}
 			err := c.WriteJSON(message)
 			if err != nil {
 				log.Println("write:", err)
+				return
+			}
+		case <-pingTicker.C:
+			message := ws.GameClientMessage{
+				Type:       ws.PingMessageType,
+				ClientTime: float64(time.Now().UnixMilli()),
+			}
+			err := c.WriteJSON(message)
+			if err != nil {
+				log.Println("write ping:", err)
 				return
 			}
 		case <-ctx.Done():
