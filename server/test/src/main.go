@@ -15,8 +15,8 @@ import (
 	"kir-dev.hu/matrix-clicker/src/server/ws"
 )
 
-var addr = flag.String("addr", "wss://api.arnyjatek.kir-dev.hu", "http service address")
-var numWorkers = flag.Int("num_workers", 600, "number of workers")
+var addr = flag.String("addr", "wss://api.matrix.kir-dev.hu", "http service address")
+var numWorkers = flag.Int("num_workers", 40, "number of workers")
 
 func startWorker(ctx context.Context, increment int) {
 	u := *addr + "/ws?playerId=" + uuid.New().String()

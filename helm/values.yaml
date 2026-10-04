@@ -1,9 +1,9 @@
 frontend:
   enabled: true
   image: harbor.sch.bme.hu/org-kir-dev/matrix-clicker-client
-  host: arnyjatek.kir-dev.hu
-  apiBaseUrl: https://api.arnyjatek.kir-dev.hu
-  wsBaseUrl: wss://api.arnyjatek.kir-dev.hu
+  host: matrix.kir-dev.hu
+  apiBaseUrl: https://api.matrix.kir-dev.hu
+  wsBaseUrl: wss://api.matrix.kir-dev.hu
   replicas: 1
   strategyType: RollingUpdate
   resources:
@@ -39,10 +39,10 @@ frontend:
 
 app:
   image: harbor.sch.bme.hu/org-kir-dev/matrix-clicker-server
-  host: api.arnyjatek.kir-dev.hu
+  host: api.matrix.kir-dev.hu
   replicas: 1
   strategyType: RollingUpdate
-  frontendUrl: https://arnyjatek.kir-dev.hu
+  frontendUrl: https://matrix.kir-dev.hu
   secret: eztugysetudod123
   imagePullPolicy: Always
   ingress:
