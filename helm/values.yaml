@@ -47,13 +47,19 @@ app:
   imagePullPolicy: Always
   ingress:
     enabled: true
-    blockActuatorEndpoints: true
     annotations:
       cert-manager.io/cluster-issuer: letsencrypt
       kubernetes.io/tls-acme: 'true'
       nginx.ingress.kubernetes.io/proxy-body-size: 20m
   service:
     type: ClusterIP
+  metrics:
+    enabled: true
+    port: 9090
+    serviceMonitor:
+      enabled: false
+      interval: 1s
+      labels: {}
   resources:
     requests:
       cpu: "500m"

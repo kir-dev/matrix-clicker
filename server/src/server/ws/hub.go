@@ -11,6 +11,7 @@ type Hub struct {
 	clients    map[*client]bool
 	register   chan *client
 	unregister chan *client
+	stats      Stats
 }
 
 func NewHub(game game.Game) *Hub {
@@ -26,12 +27,13 @@ func (h *Hub) StartBroadcast() {
 	for {
 		select {
 		case client := <-h.register:
-			h.clients[client] = true
-			client.send <- getGameStateDtoForClient(client, h.game)
+			h.addClient(client)
+			dto := h.gameDto()
+			dto.Player = client.player
+			client.send <- dto
 		case client := <-h.unregister:
 			if _, ok := h.clients[client]; ok {
-				delete(h.clients, client)
-				close(client.send)
+				h.removeClient(client)
 			}
 		case <-h.game.UpdateChannel():
 			if h.game.ShouldSendScheduledUpdate() {
@@ -43,25 +45,48 @@ func (h *Hub) StartBroadcast() {
 	}
 }
 
+func (h *Hub) Stats() *Stats {
+	return &h.stats
+}
+
+func (h *Hub) addClient(c *client) {
+	h.clients[c] = true
+	h.stats.active(c).Add(1)
+	if c.player.Id != "" {
+		h.stats.PlayerConnections.Add(1)
+	} else {
+		h.stats.AnonymousConnections.Add(1)
+	}
+}
+
+func (h *Hub) removeClient(c *client) {
+	delete(h.clients, c)
+	close(c.send)
+	h.stats.active(c).Add(-1)
+}
+
 func sendGameStateToClients(h *Hub) {
+	h.stats.Broadcasts.Add(1)
+	dto := h.gameDto()
 	for client := range h.clients {
+		dto.Player = client.player
 		select {
-		case client.send <- getGameStateDtoForClient(client, h.game):
+		case client.send <- dto:
 		default:
-			close(client.send)
-			delete(h.clients, client)
+			h.stats.SlowClientDrops.Add(1)
+			h.removeClient(client)
 		}
 	}
 }
 
-func getGameStateDtoForClient(client *client, game game.Game) GameDto {
+func (h *Hub) gameDto() GameDto {
+	s := h.game.Snapshot()
 	return GameDto{
 		Type:       GameStateMessageType,
 		ServerTime: time.Now(),
-		Phase:      game.GetPhase().String(),
-		Player:     client.player,
-		Teams:      game.GetTeamScores(),
-		StartTime:  game.StartTime(),
-		EndTime:    game.EndTime(),
+		Phase:      s.Phase.String(),
+		Teams:      s.Teams,
+		StartTime:  s.StartTime,
+		EndTime:    s.EndTime,
 	}
 }

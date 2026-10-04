@@ -38,7 +38,3 @@ type GameClientMessage struct {
 type GameManagementDto struct {
 	Secret string `json:"secret"`
 }
-
-type StartGameDto struct {
-	GameManagementDto
-}

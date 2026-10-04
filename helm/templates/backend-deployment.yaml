@@ -28,9 +28,21 @@ spec:
               value: {{ .Values.app.frontendUrl }}
             - name: SECRET
               value: {{ .Values.app.secret }}
+            - name: METRICS_ADDR
+              {{- if .Values.app.metrics.enabled }}
+              value: ":{{ .Values.app.metrics.port }}"
+              {{- else }}
+              value: ""
+              {{- end }}
           ports:
-            - containerPort: 8080
+            - name: http
+              containerPort: 8080
               protocol: TCP
+            {{- if .Values.app.metrics.enabled }}
+            - name: metrics
+              containerPort: {{ .Values.app.metrics.port }}
+              protocol: TCP
+            {{- end }}
           resources:
             {{ if or (.Values.app.resources.limits.cpu) (.Values.app.resources.limits.memory) }}
             limits:

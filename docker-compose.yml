@@ -8,6 +8,7 @@ services:
     container_name: matrix-clicker-server
     ports:
       - "8080:8080"
+      - "9090:9090"
     restart: unless-stopped
 
   client:

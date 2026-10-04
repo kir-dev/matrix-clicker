@@ -19,6 +19,7 @@ func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request, frontendOrigin st
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
+		hub.stats.UpgradeFailures.Add(1)
 		log.Printf("failed to upgrade connection %v", err)
 		return
 	}

@@ -17,6 +17,7 @@ type game struct {
 	playerAssignMutex      sync.Mutex
 	gameContext            context.Context
 	cancelGameContext      context.CancelFunc
+	stats                  Stats
 }
 
 type Game interface {
@@ -32,10 +33,19 @@ type Game interface {
 	RegisterPlayer(player *Player)
 	StartTime() time.Time
 	EndTime() time.Time
+	Snapshot() Snapshot
+	Stats() *Stats
 }
 
 type TeamScore struct {
 	Score uint64 `json:"score"`
+}
+
+type Snapshot struct {
+	Phase     Phase
+	Teams     []TeamScore
+	StartTime time.Time
+	EndTime   time.Time
 }
 
 func NewGame() Game {
@@ -59,6 +69,7 @@ func (g *game) Start() {
 	g.cancelGameContext = cancel
 	g.startTime = time.Now().Add(StartingTimeout)
 	g.teamScores = make([]TeamScore, NumberOfTeams)
+	g.stats.RoundsStarted.Add(1)
 
 	go g.setUpPhaseTransitions(ctx)
 }
@@ -78,6 +89,7 @@ func (g *game) setUpPhaseTransitions(ctx context.Context) {
 	// Notify ending the game
 	select {
 	case <-time.After(RoundDuration):
+		g.stats.RoundsFinished.Add(1)
 		g.phaseTransitionChannel <- g.GetPhase()
 	case <-ctx.Done():
 		return
@@ -96,6 +108,7 @@ func (g *game) Stop() {
 			g.cancelGameContext = nil
 		}
 	}()
+	g.stats.RoundsStopped.Add(1)
 
 	g.phaseTransitionChannel <- g.GetPhase()
 }
@@ -104,11 +117,14 @@ func (g *game) GetPhase() Phase {
 	g.stateMutex.Lock()
 	defer g.stateMutex.Unlock()
 
+	return g.phaseLocked(time.Now())
+}
+
+func (g *game) phaseLocked(now time.Time) Phase {
 	if g.startTime.IsZero() {
 		return WaitingForPlayers
 	}
 
-	now := time.Now()
 	if now.Before(g.startTime) {
 		return Starting
 	}
@@ -165,18 +181,49 @@ func (g *game) EndTime() time.Time {
 	return g.startTime.Add(RoundDuration)
 }
 
+func (g *game) Snapshot() Snapshot {
+	g.stateMutex.Lock()
+	defer g.stateMutex.Unlock()
+
+	scores := make([]TeamScore, len(g.teamScores))
+	copy(scores, g.teamScores)
+	return Snapshot{
+		Phase:     g.phaseLocked(time.Now()),
+		Teams:     scores,
+		StartTime: g.startTime,
+		EndTime:   g.startTime.Add(RoundDuration),
+	}
+}
+
 func (g *game) RegisterScore(clicksPerSecond uint64, player Player) {
-	if len(player.Id) == 0 || clicksPerSecond == 0 || g.GetPhase() != Playing {
-		return
+	result := g.registerScore(clicksPerSecond, player)
+	g.stats.ScoreReports[result].Add(1)
+}
+
+func (g *game) registerScore(clicksPerSecond uint64, player Player) ScoreResult {
+	if len(player.Id) == 0 {
+		return ScoreAnonymous
+	}
+	if clicksPerSecond == 0 {
+		return ScoreZero
+	}
+	if g.GetPhase() != Playing {
+		return ScoreNotPlaying
 	}
 	if clicksPerSecond > CpsHardLimit {
 		log.Printf("player reached clicksPerSecond hard limit %v: %d cps\n", player, clicksPerSecond)
-		return
+		return ScoreOverLimit
 	}
 
 	g.stateMutex.Lock()
 	defer g.stateMutex.Unlock()
 	g.teamScores[player.Team].Score += clicksPerSecond
+	g.stats.TeamClicks[player.Team].Add(clicksPerSecond)
+	return ScoreAccepted
+}
+
+func (g *game) Stats() *Stats {
+	return &g.stats
 }
 
 func (g *game) RegisterPlayer(player *Player) {
